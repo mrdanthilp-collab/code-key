@@ -3,36 +3,27 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Access Key Gateway</title>
+    <title>Access</title>
     <style>
-        body { background-color: #0c0c10; color: #f5f5fa; font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
-        .container { text-align: center; background: #13131a; padding: 40px; border-radius: 12px; border: 1px solid #1f1f2e; max-width: 420px; width: 90%; }
-        h2 { color: #ffffff; margin-top: 0; font-size: 22px; }
-        p { color: #8f8fbc; font-size: 14px; margin-bottom: 25px; }
-        .key-container { display: flex; align-items: center; background: #0c0c10; border: 1px solid #33334d; border-radius: 8px; padding: 4px; }
-        .key-input { flex: 1; background: transparent; border: none; color: #00ff7f; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; padding: 12px; outline: none; text-align: center; }
-        .toggle-btn { background-color: #8a2be2; color: white; border: none; padding: 10px 20px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
-        .toggle-btn:hover { background-color: #a043f7; }
+        body { background: #0c0c10; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; font-family: sans-serif; }
+        .box { background: #13131a; padding: 20px; border-radius: 10px; text-align: center; border: 1px solid #333; }
+        input { background: #0c0c10; color: #00ff7f; border: 1px solid #444; padding: 10px; width: 250px; text-align: center; font-weight: bold; }
+        button { background: #8a2be2; color: white; border: none; padding: 10px 20px; border-radius: 5px; cursor: pointer; margin-top: 10px; }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h2>Verification Complete</h2>
-        <p>Copy your access key below to proceed.</p>
-        <div class="key-container">
-            <input type="text" id="keyField" class="key-input" value="KEY_8f3a9c2b1e7d4b6c9a0e5f2cd8b1a4f3" readonly>
-            <button onclick="copyKey()" id="btnText" class="toggle-btn">Copy Key</button>
-        </div>
+    <div class="box">
+        <h2 style="color:white">Access Key</h2>
+        <input type="text" id="k" value="KEY_2026_CYBER_PRO" readonly>
+        <br>
+        <button onclick="c()">Copy Key</button>
     </div>
     <script>
-        function copyKey() {
-            var keyField = document.getElementById('keyField');
-            var btnText = document.getElementById('btnText');
-            keyField.select();
+        function c() {
+            var t = document.getElementById("k");
+            t.select();
             document.execCommand("copy");
-            btnText.innerText = "Copied!";
-            btnText.style.backgroundColor = "#00ff7f";
-            setTimeout(() => { btnText.innerText = "Copy Key"; btnText.style.backgroundColor = "#8a2be2"; }, 2000);
+            alert("Key Copied!");
         }
     </script>
 </body>
