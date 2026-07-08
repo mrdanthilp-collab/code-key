@@ -1,5 +1,5 @@
 <!DOCTYPE html>
-<html lang="ru">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
@@ -17,16 +17,16 @@
         }
         .container {
             background-color: #12131b;
-            border: 1px solid #00e2ff;
+            border: 1px solid #8c96aa;
             border-radius: 8px;
             padding: 30px;
             text-align: center;
-            box-shadow: 0 0 20px rgba(0, 226, 255, 0.2);
+            box-shadow: 0 0 20px rgba(140, 150, 170, 0.15);
             max-width: 400px;
             width: 100%;
         }
         h1 {
-            color: #00e2ff;
+            color: #8c96aa;
             font-size: 20px;
             margin-bottom: 10px;
             letter-spacing: 1px;
@@ -48,7 +48,7 @@
             word-break: break-all;
         }
         .btn {
-            background-color: #00e2ff;
+            background-color: #8c96aa;
             color: #0a0b10;
             border: none;
             padding: 10px 20px;
@@ -58,7 +58,7 @@
             transition: background 0.2s;
         }
         .btn:hover {
-            background-color: #00b5cc;
+            background-color: #6e788a;
         }
     </style>
 </head>
@@ -66,36 +66,34 @@
 
 <div class="container">
     <h1>NOWA ENGINE ACCESS KEY</h1>
-    <p>Скопируйте ключ ниже и вставьте в инжектор внутри игры.</p>
+    <p>Copy the key below and paste it into the UI in-game.</p>
     
-    <!-- Сюда будет выводиться сгенерированный ключ -->
-    <div class="key-box" id="key-container">Загрузка...</div>
+    <div class="key-box" id="key-container">Loading...</div>
     
-    <button class="btn" onclick="copyKey()">Скопировать ключ</button>
+    <button class="btn" onclick="copyKey()">Copy Key</button>
 </div>
 
 <script>
-    // Функция генерации ключа на основе текущей даты (меняется раз в сутки)
+    // Полностью синхронизированный алгоритм генерации с Lua (UTC)
     function generateDailyKey() {
         const date = new Date();
         const year = date.getUTCFullYear();
         const month = date.getUTCMonth() + 1;
         const day = date.getUTCDate();
         
-        // Простая маска для создания уникальной строки ключа
         const rawString = "NOWA_KEY_" + year + "_" + month + "_" + day + "_SECURE";
         
-        // Превращаем строку в простой хэш (Base64), чтобы ключ не выглядел очевидным
-        return btoa(rawString).substring(0, 16); 
+        // Стандартный алгоритм кодирования строки в валидный Base64
+        const b64 = btoa(unescape(encodeURIComponent(rawString)));
+        return b64.substring(0, 16); 
     }
 
-    // Отображаем ключ на странице
     const currentKey = generateDailyKey();
     document.getElementById('key-container').innerText = currentKey;
 
     function copyKey() {
         navigator.clipboard.writeText(currentKey);
-        alert("Ключ успешно скопирован!");
+        alert("Key copied to clipboard!");
     }
 </script>
 </body>
