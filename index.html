@@ -5,118 +5,34 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Access Key Gateway</title>
     <style>
-        body {
-            background-color: #0c0c10;
-            color: #f5f5fa;
-            font-family: 'Segoe UI', Arial, sans-serif;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100vh;
-            margin: 0;
-            overflow: hidden;
-        }
-        .container {
-            text-align: center;
-            background: #13131a;
-            padding: 40px;
-            border-radius: 12px;
-            box-shadow: 0 8px 32px rgba(138, 43, 226, 0.15);
-            border: 1px solid #1f1f2e;
-            max-width: 420px;
-            width: 90%;
-        }
-        h2 {
-            color: #ffffff;
-            margin-top: 0;
-            font-size: 22px;
-            font-weight: 600;
-            letter-spacing: 0.5px;
-        }
-        p {
-            color: #8f8fbc;
-            font-size: 14px;
-            line-height: 1.5;
-            margin-bottom: 25px;
-        }
-        .key-container {
-            display: flex;
-            align-items: center;
-            background: #0c0c10;
-            border: 1px solid #33334d;
-            border-radius: 8px;
-            padding: 4px;
-            margin-top: 15px;
-            box-sizing: border-box;
-        }
-        .key-input {
-            flex: 1;
-            background: transparent;
-            border: none;
-            color: #00ff7f;
-            font-family: 'Courier New', monospace;
-            font-size: 16px;
-            font-weight: bold;
-            padding: 12px;
-            letter-spacing: 2px;
-            outline: none;
-            width: 100%;
-        }
-        .toggle-btn {
-            background-color: #8a2be2;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            font-size: 14px;
-            border-radius: 6px;
-            cursor: pointer;
-            font-weight: bold;
-            transition: all 0.2s ease;
-            white-space: nowrap;
-            margin-left: 4px;
-        }
-        .toggle-btn:hover {
-            background-color: #a043f7;
-        }
+        body { background-color: #0c0c10; color: #f5f5fa; font-family: 'Segoe UI', Arial, sans-serif; display: flex; justify-content: center; align-items: center; height: 100vh; margin: 0; }
+        .container { text-align: center; background: #13131a; padding: 40px; border-radius: 12px; border: 1px solid #1f1f2e; max-width: 420px; width: 90%; }
+        h2 { color: #ffffff; margin-top: 0; font-size: 22px; }
+        p { color: #8f8fbc; font-size: 14px; margin-bottom: 25px; }
+        .key-container { display: flex; align-items: center; background: #0c0c10; border: 1px solid #33334d; border-radius: 8px; padding: 4px; }
+        .key-input { flex: 1; background: transparent; border: none; color: #00ff7f; font-family: 'Courier New', monospace; font-size: 14px; font-weight: bold; padding: 12px; outline: none; text-align: center; }
+        .toggle-btn { background-color: #8a2be2; color: white; border: none; padding: 10px 20px; font-size: 14px; border-radius: 6px; cursor: pointer; font-weight: bold; transition: 0.2s; }
+        .toggle-btn:hover { background-color: #a043f7; }
     </style>
 </head>
 <body>
     <div class="container">
         <h2>Verification Complete</h2>
-        <p>You have successfully passed the checkpoint. Click the button below to copy your access key.</p>
-        
+        <p>Copy your access key below to proceed.</p>
         <div class="key-container">
-            <input type="password" id="keyField" class="key-input" value="KEY_8f3a9c2b1e7d4b6c9a0e5f2cd8b1a4f3" readonly>
+            <input type="text" id="keyField" class="key-input" value="KEY_8f3a9c2b1e7d4b6c9a0e5f2cd8b1a4f3" readonly>
             <button onclick="copyKey()" id="btnText" class="toggle-btn">Copy Key</button>
         </div>
     </div>
-
     <script>
         function copyKey() {
             var keyField = document.getElementById('keyField');
             var btnText = document.getElementById('btnText');
-            
-            // Выделяем текст в скрытом поле и копируем его
             keyField.select();
-            keyField.setSelectionRange(0, 99999); // Для мобильных устройств
-            
-            try {
-                navigator.clipboard.writeText(keyField.value);
-                
-                // Визуальный отклик, что скопировано
-                btnText.innerText = "Copied!";
-                btnText.style.backgroundColor = "#00ff7f";
-                btnText.style.color = "#0c0c10";
-                
-                // Возвращаем кнопку в исходное состояние через 2 секунды
-                setTimeout(function() {
-                    btnText.innerText = "Copy Key";
-                    btnText.style.backgroundColor = "#8a2be2";
-                    btnText.style.color = "white";
-                }, 2000);
-            } catch (err) {
-                alert("Failed to copy automatically. Please try again.");
-            }
+            document.execCommand("copy");
+            btnText.innerText = "Copied!";
+            btnText.style.backgroundColor = "#00ff7f";
+            setTimeout(() => { btnText.innerText = "Copy Key"; btnText.style.backgroundColor = "#8a2be2"; }, 2000);
         }
     </script>
 </body>
