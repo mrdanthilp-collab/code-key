@@ -55,7 +55,7 @@ local function collectCandies()
 end
 
 -- ==========================================
--- ЛОГИКА СМЕНЫ СЕРВЕРА
+-- УМНАЯ ЛОГИКА СМЕНЫ СЕРВЕРА (АНТИ-БАН)
 -- ==========================================
 local function hopToRandomServer()
     if isHopping then return end
@@ -65,24 +65,28 @@ local function hopToRandomServer()
     local currentJobId = game.JobId
     local url = "https://games.roblox.com/v1/games/" .. placeId .. "/servers/Public?sortOrder=Asc&limit=100"
     
-    print("[AutoHop] Ищу новый сервер...")
+    if statusLabel then statusLabel.Text = "Статус: Поиск сервера..." end
+    
     local response = nil
     local req = request or http_request or syn.request
     
-    if req then
-        local ok, res = pcall(req, {Url = url, Method = "GET"})
-        if ok and res and res.Success then
-            local s, r = pcall(function() return HttpService:JSONDecode(res.Body) end)
-            if s then response = r end
+    -- Делаем до 3 попыток получить список серверов
+    for i = 1, 3 do
+        if req then
+            local ok, res = pcall(req, {Url = url, Method = "GET"})
+            if ok and res and res.Success then
+                local s, r = pcall(function() return HttpService:JSONDecode(res.Body) end)
+                if s then response = r; break end
+            end
         end
-    end
-    
-    if not response then
-        local ok, res = pcall(function() return game:HttpGet(url) end)
-        if ok then
-            local s, r = pcall(function() return HttpService:JSONDecode(res) end)
-            if s then response = r end
+        if not response then
+            local ok, res = pcall(function() return game:HttpGet(url) end)
+            if ok then
+                local s, r = pcall(function() return HttpService:JSONDecode(res) end)
+                if s then response = r; break end
+            end
         end
+        task.wait(2) -- Ждем 2 секунды перед повторной попыткой
     end
     
     local randomServerId = nil
@@ -98,27 +102,32 @@ local function hopToRandomServer()
         end
     end
     
-    -- Если не нашли ID, используем стандартный телепорт (закинет куда-нибудь)
+    -- Если Roblox заблокировал API (Rate Limit), ждем и пробуем снова
     if not randomServerId then
-        print("[AutoHop] Ошибка API, стандартный телепорт.")
-        TeleportService:Teleport(placeId, player)
-        return
+        if statusLabel then statusLabel.Text = "Статус: Блок API. Ждем 5с..." end
+        task.wait(5)
+        isHopping = false
+        return hopToRandomServer()
     end
     
-    print("[AutoHop] Переход на: " .. randomServerId)
+    if statusLabel then statusLabel.Text = "Статус: Переход..." end
     
     -- ==========================================
-    -- ОБНОВЛЕННЫЙ QUEUE (С ЗАДЕРЖКОЙ И PCALL)
+    -- СОХРАНЕНИЕ СКРИПТА (С ОЖИДАНИЕМ ЗАГРУЗКИ)
     -- ==========================================
     if QueueFunction and SCRIPT_URL ~= "" then
-        -- Ждем 3 секунды на новом сервере перед запуском, чтобы прогрузился PlayerGui
+        -- Ждем, пока игра прогрузится (IsLoaded), и только потом запускаем
         local execString = string.format(
-            'task.wait(3) local s, e = pcall(function() loadstring(game:HttpGet("%s"))() end) if not s then warn("[AutoFarmLoadErr] " .. tostring(e)) end', 
+            'if not game:IsLoaded() then game.Loaded:Wait() end ' ..
+            'task.wait(1) ' ..
+            'local s, e = pcall(function() loadstring(game:HttpGet("%s", true))() end) ' ..
+            'if not s then warn("[AutoFarmLoadErr] " .. tostring(e)) end', 
             SCRIPT_URL
         )
         QueueFunction(execString)
     end
     
+    task.wait(1) -- Важно: ждем 1 сек, чтобы экзекьютор точно сохранил команду
     TeleportService:TeleportToPlaceInstance(placeId, randomServerId, player)
 end
 
@@ -150,7 +159,7 @@ local function autoFarmLoop()
         end
         
         if tick() - startTime > maxTimeOnServer then
-            if statusLabel then statusLabel.Text = "Статус: Таймаут 15с. Ливаю..." end
+            if statusLabel then statusLabel.Text = "Статус: Таймаут. Ливаю..." end
             autoFarm = false 
             hopToRandomServer()
             break
@@ -249,22 +258,22 @@ btnForceHop.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- ЖЕЛЕЗОБЕТОННЫЙ АВТО-СТАРТ
+-- АВТО-СТАРТ
 -- ==========================================
 task.spawn(function()
-    statusLabel.Text = "Статус: Ждем загрузку карты..."
+    if statusLabel then statusLabel.Text = "Статус: Ждем загрузку карты..." end
     local waitTime = 0
     while not Workspace:FindFirstChild("CandyCorns") and waitTime < 20 do
         task.wait(0.5)
         waitTime = waitTime + 0.5
     end
     
-    statusLabel.Text = "Статус: Ждем персонажа..."
+    if statusLabel then statusLabel.Text = "Статус: Ждем персонажа..." end
     while not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") do
         task.wait(0.5)
     end
     
-    statusLabel.Text = "Статус: Авто-старт!"
+    if statusLabel then statusLabel.Text = "Статус: Авто-старт!" end
     task.wait(0.5)
     startFarm()
 end)
