@@ -1,4 +1,5 @@
-local SCRIPT_URL = "https://raw.githubusercontent.com/ВАШ_НИК/ВАШ_РЕПО/main/ИМЯ_ФАЙЛА.lua"
+-- СЮДА Я УЖЕ ВСТАВИЛ ТВОЮ ССЫЛКУ
+local SCRIPT_URL = "https://raw.githubusercontent.com/mrdanthilp-collab/code-key/515def41164b2c4ffc2831f3cccbf415170a98b6/farm.lua"
 
 local collectInterval = 1.0
 local hopDelay = 15.0
@@ -89,19 +90,16 @@ local function hopToRandomServer()
     print("[AutoHop] Переход на новый сервер: " .. randomServerId)
     markCurrentServerVisited()
     
-    if SCRIPT_URL ~= "" and not string.find(SCRIPT_URL, "ВАШ_НИК") then
-        local executeCode = 'loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()'
-        if type(syn) == "table" and syn.queue_on_teleport then
-            syn.queue_on_teleport(executeCode)
-        elseif type(queue_on_teleport) == "function" then
-            queue_on_teleport(executeCode)
-        elseif type(fluxus) == "table" and fluxus.queue_on_teleport then
-            fluxus.queue_on_teleport(executeCode)
-        else
-            print("[AutoHop] ВНИМАНИЕ: Экзекьютор не поддерживает queue_on_teleport!")
-        end
+    -- Сохраняем скрипт для перезапуска
+    local executeCode = 'loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()'
+    if type(syn) == "table" and syn.queue_on_teleport then
+        syn.queue_on_teleport(executeCode)
+    elseif type(queue_on_teleport) == "function" then
+        queue_on_teleport(executeCode)
+    elseif type(fluxus) == "table" and fluxus.queue_on_teleport then
+        fluxus.queue_on_teleport(executeCode)
     else
-        print("[AutoHop] SCRIPT_URL не указан. Скрипт не перезапустится автоматически.")
+        print("[AutoHop] ВНИМАНИЕ: Экзекьютор не поддерживает queue_on_teleport!")
     end
     
     TeleportService:TeleportToPlaceInstance(placeId, randomServerId, player)
@@ -182,4 +180,4 @@ btnToggle.MouseButton1Click:Connect(function()
     end
 end)
 
-print("✅ Скрипт готов. Не забудьте указать SCRIPT_URL!")
+print("✅ Скрипт готов.")
