@@ -55,7 +55,7 @@ local function collectCandies()
 end
 
 -- ==========================================
--- УМНАЯ ЛОГИКА СМЕНЫ СЕРВЕРА (АНТИ-БАН)
+-- УМНАЯ ЛОГИКА СМЕНЫ СЕРВЕРА (С ЗАЩИТОЙ ОТ СБОЕВ)
 -- ==========================================
 local function hopToRandomServer()
     if isHopping then return end
@@ -70,7 +70,6 @@ local function hopToRandomServer()
     local response = nil
     local req = request or http_request or syn.request
     
-    -- Делаем до 3 попыток получить список серверов
     for i = 1, 3 do
         if req then
             local ok, res = pcall(req, {Url = url, Method = "GET"})
@@ -86,7 +85,7 @@ local function hopToRandomServer()
                 if s then response = r; break end
             end
         end
-        task.wait(2) -- Ждем 2 секунды перед повторной попыткой
+        task.wait(2)
     end
     
     local randomServerId = nil
@@ -102,9 +101,8 @@ local function hopToRandomServer()
         end
     end
     
-    -- Если Roblox заблокировал API (Rate Limit), ждем и пробуем снова
     if not randomServerId then
-        if statusLabel then statusLabel.Text = "Статус: Блок API. Ждем 5с..." end
+        if statusLabel then statusLabel.Text = "Статус: Блок API. Ждем..." end
         task.wait(5)
         isHopping = false
         return hopToRandomServer()
@@ -113,28 +111,48 @@ local function hopToRandomServer()
     if statusLabel then statusLabel.Text = "Статус: Переход..." end
     
     -- ==========================================
-    -- СОХРАНЕНИЕ СКРИПТА (С ОЖИДАНИЕМ ЗАГРУЗКИ)
+    -- ОБХОД КЭША GITHUB И ОЖИДАНИЕ ЗАГРУЗКИ
     -- ==========================================
     if QueueFunction and SCRIPT_URL ~= "" then
-        -- Ждем, пока игра прогрузится (IsLoaded), и только потом запускаем
+        -- Добавляем случайное число в конец ссылки, чтобы GitHub не отдавал старый кэш
+        local noCacheUrl = SCRIPT_URL .. "?t=" .. tostring(os.time()) .. math.random(1, 10000)
+        
+        -- Ждем загрузки игры и даем время прогрузиться карте
         local execString = string.format(
             'if not game:IsLoaded() then game.Loaded:Wait() end ' ..
-            'task.wait(1) ' ..
-            'local s, e = pcall(function() loadstring(game:HttpGet("%s", true))() end) ' ..
+            'task.wait(4) ' .. -- Даем 4 секунды на прогрузку GUI
+            'local s, e = pcall(function() loadstring(game:HttpGet("%s"))() end) ' ..
             'if not s then warn("[AutoFarmLoadErr] " .. tostring(e)) end', 
-            SCRIPT_URL
+            noCacheUrl
         )
         QueueFunction(execString)
     end
     
-    task.wait(1) -- Важно: ждем 1 сек, чтобы экзекьютор точно сохранил команду
-    TeleportService:TeleportToPlaceInstance(placeId, randomServerId, player)
+    task.wait(2) -- Даем экзекьютору время сохранить команду
+    
+    -- Пытаемся телепортироваться с защитой
+    local teleportSuccess, teleportErr = pcall(function()
+        TeleportService:TeleportToPlaceInstance(placeId, randomServerId, player)
+    end)
+    
+    -- Если телепорт не удался (сервер переполнился), запускаем фарм заново
+    if not teleportSuccess then
+        warn("[AutoHop] Ошибка телепорта: " .. tostring(teleportErr))
+        if statusLabel then statusLabel.Text = "Статус: Ошибка телепорта. Возврат..." end
+        isHopping = false
+        task.wait(3)
+        -- Перезапускаем цикл сбора на текущем сервере
+        if not autoFarm then
+            autoFarm = true
+            task.spawn(autoFarmLoop)
+        end
+    end
 end
 
 -- ==========================================
 -- ОСНОВНОЙ ЦИКЛ (СБОР ДО ПУСТОТЫ)
 -- ==========================================
-local function autoFarmLoop()
+function autoFarmLoop()
     local startTime = tick()
     local emptyTicks = 0
     
@@ -149,7 +167,7 @@ local function autoFarmLoop()
         if currentCount == 0 then
             emptyTicks = emptyTicks + 1
             if emptyTicks > 5 then 
-                if statusLabel then statusLabel.Text = "Статус: Все собрано! Ливаю..." end
+                if statusLabel then statusLabel.Text = "Статус: Все собрано!" end
                 autoFarm = false 
                 hopToRandomServer()
                 break
@@ -191,7 +209,7 @@ local title = Instance.new("TextLabel")
 title.Size = UDim2.new(1, 0, 0, 30)
 title.BackgroundColor3 = Color3.fromRGB(50, 50, 70)
 title.BorderSizePixel = 0
-title.Text = "Fast Server Hop"
+title.Text = "Anti-Ban Hop"
 title.TextColor3 = Color3.fromRGB(255, 255, 255)
 title.Font = Enum.Font.GothamBold
 title.TextSize = 13
