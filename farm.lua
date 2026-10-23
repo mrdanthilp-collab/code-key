@@ -1,7 +1,7 @@
-local SCRIPT_URL = "https://raw.githubusercontent.com/mrdanthilp-collab/code-key/main/farm.lua"
+local SCRIPT_URL = "https://raw.githubusercontent.com/mrdanthilp-collab/code-key/refs/heads/main/farm.lua"
 
-local collectInterval = 0.1 -- Очень быстро проверяем и собираем
-local maxTimeOnServer = 15.0 -- Максимум 15 сек на сервере (если конфеты багнутые)
+local collectInterval = 0.1
+local maxTimeOnServer = 15.0
 
 local Players = game:GetService("Players")
 local Workspace = game:GetService("Workspace")
@@ -27,9 +27,7 @@ end
 -- ==========================================
 local function getCandyCount()
     local folder = Workspace:FindFirstChild("CandyCorns")
-    if folder then
-        return #folder:GetChildren()
-    end
+    if folder then return #folder:GetChildren() end
     return 0
 end
 
@@ -87,29 +85,38 @@ local function hopToRandomServer()
         end
     end
     
-    if not response or not response.data then
-        warn("[AutoHop] Ошибка API. Стандартный телепорт.")
-        TeleportService:Teleport(placeId, player)
-        return
-    end
-    
-    local availableServers = {}
-    for _, server in ipairs(response.data) do
-        if server.id ~= currentJobId and server.playing < server.maxPlayers then
-            table.insert(availableServers, server.id)
+    local randomServerId = nil
+    if response and response.data then
+        local availableServers = {}
+        for _, server in ipairs(response.data) do
+            if server.id ~= currentJobId and server.playing < server.maxPlayers then
+                table.insert(availableServers, server.id)
+            end
+        end
+        if #availableServers > 0 then
+            randomServerId = availableServers[math.random(1, #availableServers)]
         end
     end
     
-    if #availableServers == 0 then
+    -- Если не нашли ID, используем стандартный телепорт (закинет куда-нибудь)
+    if not randomServerId then
+        print("[AutoHop] Ошибка API, стандартный телепорт.")
         TeleportService:Teleport(placeId, player)
         return
     end
     
-    local randomServerId = availableServers[math.random(1, #availableServers)]
     print("[AutoHop] Переход на: " .. randomServerId)
     
+    -- ==========================================
+    -- ОБНОВЛЕННЫЙ QUEUE (С ЗАДЕРЖКОЙ И PCALL)
+    -- ==========================================
     if QueueFunction and SCRIPT_URL ~= "" then
-        QueueFunction('loadstring(game:HttpGet("' .. SCRIPT_URL .. '"))()')
+        -- Ждем 3 секунды на новом сервере перед запуском, чтобы прогрузился PlayerGui
+        local execString = string.format(
+            'task.wait(3) local s, e = pcall(function() loadstring(game:HttpGet("%s"))() end) if not s then warn("[AutoFarmLoadErr] " .. tostring(e)) end', 
+            SCRIPT_URL
+        )
+        QueueFunction(execString)
     end
     
     TeleportService:TeleportToPlaceInstance(placeId, randomServerId, player)
@@ -124,17 +131,14 @@ local function autoFarmLoop()
     
     while autoFarm do
         collectCandies()
-        
         local currentCount = getCandyCount()
         
         if statusLabel then 
             statusLabel.Text = "Статус: Сбор... Осталось: " .. currentCount
         end
         
-        -- Если папка пуста
         if currentCount == 0 then
             emptyTicks = emptyTicks + 1
-            -- Ждем полсекунды (5 тиков по 0.1с), чтобы убедиться, что конфеты реально собрались
             if emptyTicks > 5 then 
                 if statusLabel then statusLabel.Text = "Статус: Все собрано! Ливаю..." end
                 autoFarm = false 
@@ -145,7 +149,6 @@ local function autoFarmLoop()
             emptyTicks = 0
         end
         
-        -- Если прошло 15 секунд, а конфеты не кончаются (баг или их бесконечно)
         if tick() - startTime > maxTimeOnServer then
             if statusLabel then statusLabel.Text = "Статус: Таймаут 15с. Ливаю..." end
             autoFarm = false 
@@ -229,8 +232,7 @@ end
 
 btnToggle.MouseButton1Click:Connect(function()
     autoFarm = not autoFarm
-    if autoFarm then
-        startFarm()
+    if autoFarm then startFarm()
     else
         btnToggle.Text = "Auto Farm: OFF"
         btnToggle.BackgroundColor3 = Color3.fromRGB(80, 80, 100)
@@ -247,12 +249,10 @@ btnForceHop.MouseButton1Click:Connect(function()
 end)
 
 -- ==========================================
--- ЖЕЛЕЗОБЕТОННЫЙ АВТО-СТАРТ (ЦИКЛ WHILE)
+-- ЖЕЛЕЗОБЕТОННЫЙ АВТО-СТАРТ
 -- ==========================================
 task.spawn(function()
     statusLabel.Text = "Статус: Ждем загрузку карты..."
-    
-    -- Ждем папку с конфетами (максимум 20 секунд)
     local waitTime = 0
     while not Workspace:FindFirstChild("CandyCorns") and waitTime < 20 do
         task.wait(0.5)
@@ -260,15 +260,11 @@ task.spawn(function()
     end
     
     statusLabel.Text = "Статус: Ждем персонажа..."
-    
-    -- Ждем персонажа и HumanoidRootPart
     while not player.Character or not player.Character:FindFirstChild("HumanoidRootPart") do
         task.wait(0.5)
     end
     
     statusLabel.Text = "Статус: Авто-старт!"
     task.wait(0.5)
-    
-    -- Запускаем сбор
     startFarm()
 end)
